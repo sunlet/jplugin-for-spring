@@ -14,6 +14,8 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.*;
+import org.springframework.boot.web.servlet.server.AbstractServletWebServerFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.PriorityOrdered;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -74,6 +76,10 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
         @Autowired
         private IObjectResolver springBeanResolver;
         private Environment environment;
+        @Autowired
+        private ApplicationContext applicationContext;
+        @Autowired(required = false)
+        private AbstractServletWebServerFactory webServerFactory;
 
         @Override
         public void setEnvironment(Environment environment) {
@@ -81,6 +87,10 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
         }
 
         public void init() {
+            final Integer serverPort = this.getServerPort();
+            if(serverPort != null){
+                System.setProperty("app.embedded.server.port", String.valueOf(serverPort));
+            }
             //add Jplugin config to spring environment
             if(environment instanceof ConfigurableEnvironment){
                 final ConfigurableEnvironment configurableEnvironment = (ConfigurableEnvironment) this.environment;
@@ -90,6 +100,13 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
             }
             PluginEnvirement.getInstance().addObjectResolver(springBeanResolver);
             PluginEnvirement.getInstance().startup();
+        }
+
+        private Integer getServerPort(){
+            if(webServerFactory != null){
+                return webServerFactory.getPort();
+            }
+            return null;
         }
 
         public void stop(){
