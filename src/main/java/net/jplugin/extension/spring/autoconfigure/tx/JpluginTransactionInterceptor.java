@@ -15,7 +15,7 @@ import java.lang.reflect.Method;
  */
 public class JpluginTransactionInterceptor extends AbstractExtensionInterceptor {
 
-    @Autowired
+    @Autowired(required = false)
     private TransactionInterceptor transactionInterceptor;
 
     /**
@@ -28,6 +28,9 @@ public class JpluginTransactionInterceptor extends AbstractExtensionInterceptor 
      */
     @Override
     protected Object execute(FilterChain fc, ExtensionInterceptorContext ctx) throws Throwable {
+        if(transactionInterceptor == null){
+            return super.execute(fc, ctx);
+        }
         final Invoke invoke = new Invoke(ctx.getMethod(), ctx.getArgs(), fc, ctx);
         return transactionInterceptor.invoke(invoke);
     }
@@ -49,7 +52,6 @@ public class JpluginTransactionInterceptor extends AbstractExtensionInterceptor 
         /**
          * Get the method being called.
          * <p>This method is a friendly implementation of the
-         * {@link Joinpoint#getStaticPart()} method (same result).
          * @return the method being called
          */
         @Override
