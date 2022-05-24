@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 @PluginAnnotation
 public class Jplugin extends AbstractPlugin {
 
+    private static final int PRIORITY = -300;
+
     public Jplugin() {
         ExtensionKernelHelper.addExtensionInterceptorExtension(this, JpluginTransactionInterceptor.class, null,
                 "EP_SERVICE", null, null, UseTransaction.class);
@@ -22,7 +24,7 @@ public class Jplugin extends AbstractPlugin {
 
     @Override
     public int getPrivority() {
-        return 0;
+        return PRIORITY;
     }
 
     @Override
