@@ -1,6 +1,7 @@
 package net.jplugin.extension.spring.autoconfigure;
 
 import net.jplugin.core.config.api.ConfigFactory;
+import net.jplugin.core.kernel.PluginApp;
 import net.jplugin.core.kernel.api.IObjectResolver;
 import net.jplugin.core.kernel.api.PluginEnvirement;
 import net.jplugin.extension.spring.autoconfigure.tx.JpluginAnnotationTransactionAttributeSource;
@@ -99,7 +100,8 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
                 propertySources.addFirst(new JpluginConfigPropertySource("jplugin configs"));
             }
             PluginEnvirement.getInstance().addObjectResolver(springBeanResolver);
-            PluginEnvirement.getInstance().startup();
+//            PluginEnvirement.getInstance().startup();
+            PluginApp.main(null);
         }
 
         private Integer getServerPort(){
