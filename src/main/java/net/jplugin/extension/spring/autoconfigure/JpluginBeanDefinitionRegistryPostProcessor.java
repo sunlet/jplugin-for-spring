@@ -1,10 +1,11 @@
 package net.jplugin.extension.spring.autoconfigure;
 
 import net.jplugin.core.config.api.ConfigFactory;
-import net.jplugin.core.kernel.PluginApp;
 import net.jplugin.core.kernel.api.IObjectResolver;
 import net.jplugin.core.kernel.api.PluginEnvirement;
 import net.jplugin.extension.spring.autoconfigure.tx.JpluginAnnotationTransactionAttributeSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.MutablePropertyValues;
@@ -17,7 +18,12 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.*;
 import org.springframework.boot.web.servlet.server.AbstractServletWebServerFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.EnvironmentAware;
+import org.springframework.context.event.ApplicationEventMulticaster;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.SourceFilteringListener;
 import org.springframework.core.PriorityOrdered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
@@ -35,6 +41,7 @@ import java.util.*;
  */
 public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
 
+    private static final Logger logger = LoggerFactory.getLogger(JpluginBeanDefinitionRegistryPostProcessor.class);
     private static final String JPLUGIN_BEAM_NAME = ClassUtils.getShortName(JPluginInit.class);
 
     @Override
@@ -73,18 +80,23 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
         propertyValues.add("transactionAttributeSource", definition);
     }
 
-    public static class JPluginInit implements EnvironmentAware{
+    public static class JPluginInit implements EnvironmentAware, ApplicationContextAware{
         @Autowired
         private IObjectResolver springBeanResolver;
         private Environment environment;
         @Autowired
-        private ApplicationContext applicationContext;
+        private ApplicationEventMulticaster applicationEventMulticaster;
         @Autowired(required = false)
         private AbstractServletWebServerFactory webServerFactory;
 
         @Override
         public void setEnvironment(Environment environment) {
             this.environment = environment;
+        }
+
+        @Override
+        public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+            this.applicationEventMulticaster.addApplicationListener(new SourceFilteringListener(applicationContext, new ContextRefreshListener()));
         }
 
         public void init() {
@@ -96,12 +108,11 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
             if(environment instanceof ConfigurableEnvironment){
                 final ConfigurableEnvironment configurableEnvironment = (ConfigurableEnvironment) this.environment;
                 final MutablePropertySources propertySources = configurableEnvironment.getPropertySources();
-                //add plantform config
                 propertySources.addFirst(new JpluginConfigPropertySource("jplugin configs"));
             }
             PluginEnvirement.getInstance().addObjectResolver(springBeanResolver);
-//            PluginEnvirement.getInstance().startup();
-            PluginApp.main(null);
+            logger.info("start jplugin container.");
+            PluginEnvirement.getInstance().startup(null, PluginEnvirement.STARTTYPE_FIRST);
         }
 
         private Integer getServerPort(){
@@ -113,6 +124,14 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
 
         public void stop(){
             PluginEnvirement.getInstance().stop();
+        }
+
+        private class ContextRefreshListener implements ApplicationListener<ContextRefreshedEvent> {
+            @Override
+            public void onApplicationEvent(ContextRefreshedEvent event) {
+                logger.info("initialize jplugin container.");
+                PluginEnvirement.getInstance().startup(null, PluginEnvirement.STARTTYPE_SECOND);
+            }
         }
     }
 
