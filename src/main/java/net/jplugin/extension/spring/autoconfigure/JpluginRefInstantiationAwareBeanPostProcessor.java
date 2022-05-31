@@ -19,6 +19,8 @@ public class JpluginRefInstantiationAwareBeanPostProcessor implements Instantiat
     private static final Set<String> FRAME_WORK_BEANNAME_PREFIX = new HashSet<>();
 
     static {
+        FRAME_WORK_BEANNAME_PREFIX.add(JpluginBeanDefinitionRegistryPostProcessor.JPluginContainer.class.getName());
+        FRAME_WORK_BEANNAME_PREFIX.add(JpluginBeanDefinitionRegistryPostProcessor.SpringBeanResolver.class.getName());
         FRAME_WORK_BEANNAME_PREFIX.add("org.springframework");
         FRAME_WORK_BEANNAME_PREFIX.add("javax");
         //FRAME_WORK_BEANNAME_PREFIX.add("java");
