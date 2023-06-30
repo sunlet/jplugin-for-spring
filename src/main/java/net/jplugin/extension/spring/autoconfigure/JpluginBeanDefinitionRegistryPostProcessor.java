@@ -42,7 +42,7 @@ import java.util.*;
 public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
 
     private static final Logger logger = LoggerFactory.getLogger(JpluginBeanDefinitionRegistryPostProcessor.class);
-    private static final String JPLUGIN_BEAM_NAME = ClassUtils.getShortName(JPluginInit.class);
+    private static final String JPLUGIN_BEAM_NAME = ClassUtils.getShortName(JPluginContainer.class);
 
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry beanDefinitionRegistry) throws BeansException {
@@ -50,7 +50,7 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
             //register Jplugin Bean
             final AbstractBeanDefinition beanDefinition = BeanDefinitionBuilder.genericBeanDefinition(SpringBeanResolver.class).getBeanDefinition();
             beanDefinitionRegistry.registerBeanDefinition(ClassUtils.getShortName(SpringBeanResolver.class), beanDefinition);
-            final AbstractBeanDefinition definition = BeanDefinitionBuilder.rootBeanDefinition(JPluginInit.class)
+            final AbstractBeanDefinition definition = BeanDefinitionBuilder.rootBeanDefinition(JPluginContainer.class)
                     .setInitMethodName("init").setDestroyMethodName("stop").getBeanDefinition();
             beanDefinitionRegistry.registerBeanDefinition(JPLUGIN_BEAM_NAME, definition);
             final Field definitionNames = ReflectionUtils.findField(DefaultListableBeanFactory.class, "beanDefinitionNames");
@@ -80,7 +80,7 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
         propertyValues.add("transactionAttributeSource", definition);
     }
 
-    public static class JPluginInit implements EnvironmentAware, ApplicationContextAware{
+    public static class JPluginContainer implements EnvironmentAware, ApplicationContextAware{
         @Autowired
         private IObjectResolver springBeanResolver;
         private Environment environment;
@@ -126,7 +126,7 @@ public class JpluginBeanDefinitionRegistryPostProcessor implements BeanDefinitio
             PluginEnvirement.getInstance().stop();
         }
 
-        private class ContextRefreshListener implements ApplicationListener<ContextRefreshedEvent> {
+        private static class ContextRefreshListener implements ApplicationListener<ContextRefreshedEvent> {
             @Override
             public void onApplicationEvent(ContextRefreshedEvent event) {
                 logger.info("initialize jplugin container.");
